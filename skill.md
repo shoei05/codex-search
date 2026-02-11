@@ -24,6 +24,8 @@ Codex CLI (`codex exec`) を使った Web 検索スキル。検索結果を `.md
 /codex-search TypeScript 5.8 新機能まとめ
 /codex-search AIエージェント開発 ベストプラクティス 2026
 /codex-search React Server Components パフォーマンス比較
+/codex-search Large Language Machines Survey 2024
+/codex-search Transformer architecture attention mechanisms 論文
 ```
 
 ## 期待される挙動
@@ -59,6 +61,7 @@ bash ~/.claude/skills/codex-search/scripts/codex_search.sh --query "<クエリ>"
 - **ログ可視**: 実行プロセスが見えるため、途中で止まらない
 - **日本語OK**: 自然な日本語で検索可能
 - **成果物自動保存**: 検索結果を3形式で自動保存、後から参照可能
+- **DOI抽出対応**: 文献検索時に論文の DOI (Digital Object Identifier) を自動抽出
 
 ## 注意
 

@@ -75,7 +75,18 @@ CODEX_PROMPT="Web検索を行い、以下のクエリについて詳細な情報
   - Summary (1-3文の要約)
   - Key Findings (箇条書き)
   - Sources (URL list)
-  - Details (詳細な調査結果)"
+  - Details (詳細な調査結果)
+
+【重要】文献検索（論文・学術記事）の場合:
+- 見つかった論文・記事ごとに必ず DOI (Digital Object Identifier) を抽出して記載してください
+- DOI は通常「10.xxxx/...」の形式です
+- DOI が見つからない場合は「DOI: なし」と明記してください
+- 出力形式例:
+  ## 論文1
+  - タイトル: xxx
+  - 著者: xxx
+  - DOI: 10.xxxx/xxx
+  - URL: https://doi.org/10.xxxx/xxx"
 
 # --- codex command ---
 CODEX_CMD=(codex exec --skip-git-repo-check "$CODEX_PROMPT")
