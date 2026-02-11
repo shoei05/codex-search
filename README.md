@@ -4,7 +4,7 @@ Claude Code用スキル: Codex CLIを使ったWeb検索 + 成果物自動保存
 
 検索結果を `.md` / `.json` / `.txt` の3形式でタイムスタンプ付きで自動保存します。
 
-## インスpiration
+## 注釈
 
 本スキルは [HayattiQ/x-research-skills](https://github.com/HayattiQ/x-research-skills) を参考に作成されました。
 
