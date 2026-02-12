@@ -40,6 +40,20 @@ bash ~/.claude/skills/codex-search/scripts/codex_search.sh --query "<クエリ>"
 3. 検索結果を表示する
 4. 成果物は `~/.claude/data/codex-search/` に自動保存される
 
+### codex exec 直接実行
+
+スキル経由ではなく、`codex exec` を直接使うこともできる:
+
+```bash
+codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調べて、日ごとの天気、気温、降水確率を教えてください" 2>&1
+```
+
+Claude Code の Bash ツールから実行する場合:
+
+```
+Bash(codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調べて、日ごとの天気、気温、降水確率を教えてください" 2>&1)
+```
+
 ## オプション
 
 | オプション | デフォルト | 説明 |

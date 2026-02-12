@@ -36,6 +36,32 @@ chmod +x ~/.claude/skills/codex-search/scripts/codex_search.sh
 /codex-search React Server Components パフォーマンス比較
 ```
 
+## 期待される挙動
+
+1. ユーザーからクエリを受け取る
+2. ラッパースクリプトを実行:
+
+```bash
+bash ~/.claude/skills/codex-search/scripts/codex_search.sh --query "<クエリ>" [オプション]
+```
+
+3. 検索結果を表示する
+4. 成果物は `~/.claude/data/codex-search/` に自動保存される
+
+### codex exec 直接実行
+
+スキル経由ではなく、`codex exec` を直接使うこともできます:
+
+```bash
+codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調べて、日ごとの天気、気温、降水確率を教えてください" 2>&1
+```
+
+Claude Code の Bash ツールから実行する場合:
+
+```
+Bash(codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調べて、日ごとの天気、気温、降水確率を教えてください" 2>&1)
+```
+
 ## 機能
 
 - **安定版**: `codex exec` を使用（MCP経由より安定）
