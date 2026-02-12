@@ -106,15 +106,36 @@ if [[ "$DRY_RUN" == true ]]; then
 fi
 
 # --- execute codex ---
-RESULT=$(timeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>/dev/null) || {
-  EXIT_CODE=$?
-  if [[ $EXIT_CODE -eq 124 ]]; then
-    echo "Error: codex exec timed out after ${TIMEOUT}s" >&2
-  else
+# macOS には timeout コマンドがないため、利用可能な方法を選択
+if command -v timeout &>/dev/null; then
+  RESULT=$(timeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>/dev/null) || {
+    EXIT_CODE=$?
+    if [[ $EXIT_CODE -eq 124 ]]; then
+      echo "Error: codex exec timed out after ${TIMEOUT}s" >&2
+    else
+      echo "Error: codex exec failed with exit code ${EXIT_CODE}" >&2
+    fi
+    exit $EXIT_CODE
+  }
+elif command -v gtimeout &>/dev/null; then
+  # brew install coreutils で gtimeout が使える場合
+  RESULT=$(gtimeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>/dev/null) || {
+    EXIT_CODE=$?
+    if [[ $EXIT_CODE -eq 124 ]]; then
+      echo "Error: codex exec timed out after ${TIMEOUT}s" >&2
+    else
+      echo "Error: codex exec failed with exit code ${EXIT_CODE}" >&2
+    fi
+    exit $EXIT_CODE
+  }
+else
+  # timeout も gtimeout もない場合は直接実行
+  RESULT=$("${CODEX_CMD[@]}" 2>/dev/null) || {
+    EXIT_CODE=$?
     echo "Error: codex exec failed with exit code ${EXIT_CODE}" >&2
-  fi
-  exit $EXIT_CODE
-}
+    exit $EXIT_CODE
+  }
+fi
 
 # --- ensure output directory ---
 mkdir -p "${OUT_DIR}"
