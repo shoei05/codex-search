@@ -16,7 +16,8 @@
 #     YYYYMMDD_HHMMSSZ_search.json - query, timestamp, params, result (JSON)
 #     YYYYMMDD_HHMMSSZ_search.txt  - プレーンテキスト結果
 
-set -euo pipefail
+set -uo pipefail
+# Note: -e を外す。保存フェーズのエラーでスクリプト全体を中断させないため
 
 # --- defaults ---
 QUERY=""
@@ -107,34 +108,38 @@ fi
 
 # --- execute codex ---
 # macOS には timeout コマンドがないため、利用可能な方法を選択
+RESULT=""
+EXEC_OK=false
 if command -v timeout &>/dev/null; then
-  RESULT=$(timeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>/dev/null) || {
+  RESULT=$(timeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>&1) && EXEC_OK=true || {
     EXIT_CODE=$?
     if [[ $EXIT_CODE -eq 124 ]]; then
-      echo "Error: codex exec timed out after ${TIMEOUT}s" >&2
+      echo "Warning: codex exec timed out after ${TIMEOUT}s" >&2
     else
-      echo "Error: codex exec failed with exit code ${EXIT_CODE}" >&2
+      echo "Warning: codex exec exited with code ${EXIT_CODE}" >&2
     fi
-    exit $EXIT_CODE
+    # 部分的な出力でも保存を試みる
   }
 elif command -v gtimeout &>/dev/null; then
-  # brew install coreutils で gtimeout が使える場合
-  RESULT=$(gtimeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>/dev/null) || {
+  RESULT=$(gtimeout "${TIMEOUT}" "${CODEX_CMD[@]}" 2>&1) && EXEC_OK=true || {
     EXIT_CODE=$?
     if [[ $EXIT_CODE -eq 124 ]]; then
-      echo "Error: codex exec timed out after ${TIMEOUT}s" >&2
+      echo "Warning: codex exec timed out after ${TIMEOUT}s" >&2
     else
-      echo "Error: codex exec failed with exit code ${EXIT_CODE}" >&2
+      echo "Warning: codex exec exited with code ${EXIT_CODE}" >&2
     fi
-    exit $EXIT_CODE
   }
 else
-  # timeout も gtimeout もない場合は直接実行
-  RESULT=$("${CODEX_CMD[@]}" 2>/dev/null) || {
+  RESULT=$("${CODEX_CMD[@]}" 2>&1) && EXEC_OK=true || {
     EXIT_CODE=$?
-    echo "Error: codex exec failed with exit code ${EXIT_CODE}" >&2
-    exit $EXIT_CODE
+    echo "Warning: codex exec exited with code ${EXIT_CODE}" >&2
   }
+fi
+
+# 結果が空の場合でも保存フェーズに進む（メタデータだけでも記録する）
+if [[ -z "$RESULT" ]]; then
+  echo "Warning: codex exec returned empty result" >&2
+  RESULT="(empty result)"
 fi
 
 # --- ensure output directory ---
@@ -156,9 +161,10 @@ MD_FILE="${OUT_DIR}/${TIMESTAMP_SLUG}_search.md"
 
 # --- save .json ---
 JSON_FILE="${OUT_DIR}/${TIMESTAMP_SLUG}_search.json"
-# Use python3 for reliable JSON encoding (handles special chars, newlines)
-python3 -c "
+# stdin 経由で RESULT を渡す（ARG_MAX 超え回避）
+echo "${RESULT}" | python3 -c "
 import json, sys
+result_text = sys.stdin.read()
 data = {
     'query': sys.argv[1],
     'timestamp': sys.argv[2],
@@ -166,19 +172,36 @@ data = {
         'out_dir': sys.argv[3],
         'timeout': int(sys.argv[4]),
     },
-    'result': sys.argv[5],
+    'result': result_text.rstrip('\n'),
 }
 print(json.dumps(data, ensure_ascii=False, indent=2))
-" "${QUERY}" "${TIMESTAMP_ISO}" "${OUT_DIR}" "${TIMEOUT}" "${RESULT}" > "${JSON_FILE}"
+" "${QUERY}" "${TIMESTAMP_ISO}" "${OUT_DIR}" "${TIMEOUT}" > "${JSON_FILE}" 2>/dev/null || {
+  echo "Warning: JSON save failed, falling back to plain text" >&2
+  # フォールバック: python3 が失敗した場合は簡易 JSON
+  printf '{"query":"%s","timestamp":"%s","result":"(see .txt file)"}\n' \
+    "${QUERY}" "${TIMESTAMP_ISO}" > "${JSON_FILE}"
+}
 
 # --- save .txt ---
 TXT_FILE="${OUT_DIR}/${TIMESTAMP_SLUG}_search.txt"
 echo "${RESULT}" > "${TXT_FILE}"
 
-# --- report saved paths to stderr ---
-echo "Saved: ${MD_FILE}" >&2
-echo "Saved: ${JSON_FILE}" >&2
-echo "Saved: ${TXT_FILE}" >&2
+# --- verify & report saved paths ---
+SAVE_COUNT=0
+for f in "${MD_FILE}" "${JSON_FILE}" "${TXT_FILE}"; do
+  if [[ -f "$f" && -s "$f" ]]; then
+    echo "Saved: ${f}" >&2
+    SAVE_COUNT=$((SAVE_COUNT + 1))
+  else
+    echo "Warning: Failed to save ${f}" >&2
+  fi
+done
+
+echo "" >&2
+echo "=== Save Summary ===" >&2
+echo "Files saved: ${SAVE_COUNT}/3" >&2
+echo "Directory: ${OUT_DIR}" >&2
+echo "Timestamp: ${TIMESTAMP_SLUG}" >&2
 
 # --- output result to stdout ---
 echo "${RESULT}"

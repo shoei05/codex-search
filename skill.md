@@ -30,29 +30,23 @@ Codex CLI (`codex exec`) を使った Web 検索スキル。検索結果を `.md
 
 ## 期待される挙動
 
-1. ユーザーからクエリを受け取る
-2. ラッパースクリプトを実行:
+1. ユーザーから受け取ったキーワードを `--query` に渡す
+2. オプション（`--out-dir`, `--dry-run`）があればそれも渡す
+3. **必ず以下のラッパースクリプトを実行する**（`codex exec` を直接実行してはならない）:
 
 ```bash
 bash ~/.claude/skills/codex-search/scripts/codex_search.sh --query "<クエリ>" [オプション]
 ```
 
-3. 検索結果を表示する
-4. 成果物は `~/.claude/data/codex-search/` に自動保存される
-
-### codex exec 直接実行
-
-スキル経由ではなく、`codex exec` を直接使うこともできる:
+4. **重要: Bash 実行時は `timeout: 200000` を必ず指定する**
+5. 実行結果の検索結果をユーザーに表示する
+6. 成果物が保存されたことを確認する:
 
 ```bash
-codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調べて、日ごとの天気、気温、降水確率を教えてください" 2>&1
+ls -la ~/.claude/data/codex-search/ | tail -5
 ```
 
-Claude Code の Bash ツールから実行する場合:
-
-```
-Bash(codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調べて、日ごとの天気、気温、降水確率を教えてください" 2>&1)
-```
+7. 保存されたファイルのパスをユーザーに報告する
 
 ## オプション
 
@@ -65,9 +59,9 @@ Bash(codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調�
 ## 出力
 
 `~/.claude/data/codex-search/` に以下が保存される:
-- `YYYYMMDD_HHMMSS_search.md` (検索結果 Markdown)
-- `YYYYMMDD_HHMMSS_search.json` (クエリ・レスポンス・メタデータ)
-- `YYYYMMDD_HHMMSS_search.txt` (プレーンテキスト抽出)
+- `YYYYMMDD_HHMMSSZ_search.md` (検索結果 Markdown)
+- `YYYYMMDD_HHMMSSZ_search.json` (クエリ・レスポンス・メタデータ)
+- `YYYYMMDD_HHMMSSZ_search.txt` (プレーンテキスト抽出)
 
 ## 特徴
 
@@ -79,6 +73,7 @@ Bash(codex exec --skip-git-repo-check "◯◯の◯◯日の天気予報を調�
 
 ## 注意
 
+- **codex exec を直接実行しないこと**。必ずラッパースクリプト経由で実行する（ログ保存のため）
 - Bash実行時は `timeout: 200000` を指定すること
 - Codex CLI がインストール済みであること（`codex exec` が使えること）
 - 検索結果の品質は Codex のモデルとWeb検索能力に依存する
